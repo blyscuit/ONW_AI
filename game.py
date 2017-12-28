@@ -46,6 +46,7 @@ class Roles:
     SEER = dotdict({"value":1, "name":"SEER"})
     THIEF = dotdict({"value":2, "name":"THIEF"})
     VILLAGER = dotdict({"value":3, "name":"VILLAGER"})
+    UNKNOWN = dotdict({"value":-1, "name":"UNKNOWN"})
 
 class Game:
 
@@ -137,10 +138,8 @@ class Game:
         print ColorTextExt(claimedBy), claimedBy, " claims ", claiming, " to be ", role.name, ColorTextExt.RESET
         newBlaim = Blaim(claimedBy, claiming, role)
         self.claimArray.append(newBlaim)
+    def printCurretGame(self):
+        print ColorTextExt.PROPMTEXT,"_", ColorTextExt.RESET
+        for idx, role in enumerate(self.gameTable):
+            print ColorTextExt(idx), idx, " is ", role.name, ColorTextExt.RESET
 
-
-    
-        
-
-
-        

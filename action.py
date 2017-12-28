@@ -2,7 +2,9 @@ from game import enum
 ActionType = enum(
     LOOK = 0,
     TRADE = 1,
-    LIE = 2
+    LIE = 2,
+    TRUTH = 3,
+    MAYBE = 4
 )
 class Action:
     performer = None

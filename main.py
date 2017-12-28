@@ -34,6 +34,7 @@ def gameover():
         game.voteFor(player.voteFor, player.playerID)
     print ColorTextExt.PROPMTEXT, "Game Over", ColorTextExt.RESET
     game.countVote()
+    game.printCurretGame()
 
 GAMETIME = 10.0
 nPlayers = 0
@@ -84,6 +85,8 @@ def inputLoop():
 def AIRunning():
     while 1:
         timeleft = GAMETIME - (time.time() - startTime)
+        for player in playerArray:
+            player.playerAI.talkingLoop(player)
     pass
 
 thread1 = threading.Thread( target=inputLoop)
