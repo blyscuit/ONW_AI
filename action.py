@@ -1,8 +1,20 @@
 from game import enum
-Action = enum(
+ActionType = enum(
     LOOK = 0,
     TRADE = 1,
     LIE = 2
 )
-# class Action:
-#     def __init__(self):
+class Action:
+    performer = None
+    targetPerson = None
+    actionType = None
+    result = None
+    secondResult = None
+    def __init__(self, performer, actionType, targetPerson = None, result = None, secondResult = None):
+        self.performer = performer
+        self.targetPerson = targetPerson
+        self.actionType = actionType
+        self.result = result
+        self.result = secondResult
+        pass
+    

@@ -13,4 +13,7 @@ class Player:
         self.playerID = player
         self.gameObject = game
         self.playerAI = ai
+
+    def addAction(self, action):
+        actionDid.append(action)
     

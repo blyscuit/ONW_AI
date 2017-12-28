@@ -1,5 +1,6 @@
 from game import Roles, Game, ColorTextExt
 import random
+from action import Action, ActionType
 #just the thinking
 class PlayerAgent:
     sureCard = []
@@ -37,14 +38,20 @@ class PlayerAI(PlayerAgent):
             if randomCard >= playerObject.gameObject.numberOfPlayers:
                 for i in range(playerObject.gameObject.numberOfPlayers, playerObject.gameObject.numberOfPlayers+playerObject.gameObject.CENTER_NUMBER):
                     self.sureCard[i] = playerObject.gameObject.lookAtCard(i)
+                    playerObject.addAction(Action(playerObject.playerID, ActionType.LOOK, i, self.sureCard[i]))
             else:
                 self.sureCard[randomCard] = playerObject.gameObject.lookAtCard(randomCard)
+                playerObject.addAction(Action(playerObject.playerID, ActionType.LOOK, randomCard, self.sureCard[randomCard]))
         elif playerObject.myCard == Roles.THIEF:
             numbers = range(playerObject.gameObject.numberOfPlayers)
             numbers.remove(playerObject.playerID)
             random.shuffle(numbers)
             randomCard = numbers.pop()
-            playerObject.gameObject.switchCard(playerObject.playerID, randomCard)
+            newcard = playerObject.gameObject.switchCard(playerObject.playerID, randomCard)
+            playerObject.addAction(Action(playerObject.playerID, ActionType.TRADE, randomCard, newcard, playerObject.myCard))
+            self.sureCard[randomCard] = playerObject.myCard
+            self.sureCard[playerObject.playerID] = newcard
+            playerObject.myCard = newcard
         elif playerObject.myCard == Roles.WEREWOLF:
             for i in range(0, playerObject.gameObject.numberOfPlayers):
                 if playerObject.gameObject.gameTable[i] is Roles.WEREWOLF:
@@ -96,7 +103,7 @@ class PlayerHuman(PlayerAgent):
             numbers = -1
             while(numbers < 0 or numbers > playerObject.gameObject.numberOfPlayers - 1):
                 var = raw_input("You are THIEF, switch with number:")
-                print ColorTextExt(0), "switching with", varColorTextExt.RESET
+                print ColorTextExt(0), "switching with", var, ColorTextExt.RESET
                 try:
                     numbers = int(float(var))
                 except ValueError:
