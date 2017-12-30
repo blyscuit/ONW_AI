@@ -33,6 +33,8 @@ class Blaim:
 def enum(**enums):
     return type('Enum', (), enums)
 class Roles:
+    roleCount = 4
+
     @classmethod
     def roleAtIndex(cls, i):
         return {
@@ -47,7 +49,6 @@ class Roles:
     THIEF = dotdict({"value":2, "name":"THIEF"})
     VILLAGER = dotdict({"value":3, "name":"VILLAGER"})
     UNKNOWN = dotdict({"value":-1, "name":"UNKNOWN"})
-
 class Game:
 
     # number of players: werewolf, villager
@@ -135,11 +136,20 @@ class Game:
                 lst[random.randint(0, self.numberOfPlayers-1)]
         print ColorTextExt.PROPMTEXT,"The most vote is", lst.index(max(lst)), " who is ", self.gameTableEdited[lst.index(max(lst))].name, ColorTextExt.RESET
     def claimRole(self, role, claiming, claimedBy):
-        print ColorTextExt(claimedBy), claimedBy, " claims ", claiming, " to be ", role.name, ColorTextExt.RESET
+        if claiming == claimedBy:
+            print ColorTextExt(claimedBy), claimedBy, ": I'm", role.name, ColorTextExt.RESET
+        else:
+            print ColorTextExt(claimedBy), claimedBy, ": claims ", claiming, " to be ", role.name, ColorTextExt.RESET
         newBlaim = Blaim(claimedBy, claiming, role)
         self.claimArray.append(newBlaim)
+    def claimThief(self, role, claiming, claimedBy):
+        print ColorTextExt(claimedBy), claimedBy, ": I was a THIEF, now", role.name, " \n I switched with ", claiming," who is now a THIEF ", ColorTextExt.RESET
+        newBlaim = Blaim(claimedBy, claimedBy, role)
+        self.claimArray.append(newBlaim)
+        newBlaim = Blaim(claimedBy, claiming, Roles.THIEF)
+        self.claimArray.append(newBlaim)
     def printCurretGame(self):
-        print ColorTextExt.PROPMTEXT,"_", ColorTextExt.RESET
-        for idx, role in enumerate(self.gameTable):
+        print ColorTextExt.PROPMTEXT,"", ColorTextExt.RESET
+        for idx, role in enumerate(self.gameTableEdited):
             print ColorTextExt(idx), idx, " is ", role.name, ColorTextExt.RESET
 

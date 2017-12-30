@@ -1,6 +1,7 @@
 from game import Game, ColorTextExt, Roles
 from player import Player
-from PlayerAI import PlayerAI, PlayerHuman
+from PlayerAI import PlayerAI
+from PlayerHuman import PlayerHuman
 import threading
 from threading import _Timer
 from threading import Thread
@@ -8,6 +9,28 @@ import time
 import sys
 from timeit import Timer
 from multiprocessing import Process
+from Tkinter import *
+
+class MyDialog:
+    def __init__(self, parent):
+
+        top = self.top = Toplevel(parent)
+
+        Label(top, text="Vote").pack()
+
+        self.e = Entry(top)
+        self.e.pack(padx=5)
+
+        b = Button(top, text="OK", command=self.ok)
+        b.pack(pady=5)
+
+    def ok(self):
+
+        print "value is", self.e.get()
+
+        self.top.destroy()
+
+
 class CustomTimer(_Timer):
     def __init__(self, interval, function, args=[], kwargs={}):
         self._original_function = function
@@ -20,6 +43,7 @@ class CustomTimer(_Timer):
     def join(self):
         super(CustomTimer, self).join()
         return self.result
+
 gamePlaying = 0
 startTime = time.time()
 def timesUp():
@@ -28,6 +52,7 @@ def timesUp():
     return False
 def gameover():
     for player in playerArray:
+        player.playerAI.thinkAboutClaims(player)
         player.playerAI.claim(player)
     for player in playerArray:
         player.playerAI.vote(player)
@@ -36,7 +61,7 @@ def gameover():
     game.countVote()
     game.printCurretGame()
 
-GAMETIME = 10.0
+GAMETIME = 4.0
 nPlayers = 0
 while(nPlayers > 6 or nPlayers < 3):
     var = raw_input(ColorTextExt.PROPMTEXT + "Please enter number of players (3-6): " + ColorTextExt.RESET)
@@ -66,7 +91,7 @@ threading.Timer(GAMETIME, gameover).start()
 # CustomTimer(GAMETIME, timesUp).start()
 # CustomTimer(GAMETIME, gameover).start()
 def inputLoop():
-    print ColorTextExt.PROPMTEXT + "What are you? WEREWOLF = 0,SEER = 1,THIEF = 2,VILLAGER = 3, v[roles]: " + ColorTextExt.RESET
+    print ColorTextExt.PROPMTEXT + "What are you? \n " + "WEREWOLF = 0,SEER = 1,THIEF = 2,VILLAGER = 3 \n " + "v[roles]: t[roles][person]" + ColorTextExt.RESET + "\n"
     while 1:
         input_string = raw_input()
         if input_string[:1].lower() == "v":
@@ -74,6 +99,11 @@ def inputLoop():
                 inN = int(float(input_string[1:]))
                 playerArray[0].voteFor = inN
                 print "You voted: ", inN
+            except ValueError:
+                print "Wrong vote format"
+        elif input_string[:1].lower() == "t":
+            try:
+                game.claimThief(int(float(input_string[2:3])), int(float(input_string[1:2])), 0)
             except ValueError:
                 print "Wrong vote format"
         else:
