@@ -5,7 +5,8 @@ from action import Action, ActionType
 class PlayerAgent:
     sureCard = []
     personWeight = []
-    def talkingLoop(self, playerObject) :
+    # when lying own weight decrease
+    def talkingLoop(self, playerObject, timeLeft) :
         pass
     
     def vote(self, playerObject):
@@ -15,10 +16,15 @@ class PlayerAgent:
         pass
     def thinkAboutClaims(self, playerObject):
         pass
+    def believingSeer(self, playerObject):
+        pass
+    def believingThief(self, playerObject):
+        pass
+        
         
 class PlayerAI(PlayerAgent):
     def lookOwnCard(self, playerObject):
-        self.sureCard = [-1] * len(playerObject.gameObject.gameTable)
+        self.sureCard = [Roles.UNKNOWN] * len(playerObject.gameObject.gameTable)
         self.sureCard[playerObject.playerID] = playerObject.myCard
         self.personWeight = [50] * playerObject.gameObject.numberOfPlayers
         self.personWeight[playerObject.playerID] = 100
@@ -46,6 +52,9 @@ class PlayerAI(PlayerAgent):
         pass
         # playerObject.gameObject.claimRole(playerObject.myCard, playerObject.playerID, playerObject.playerID)
         # playerObject.addAction(Action(playerObject.playerID, ActionType.TRUTH, playerObject.playerID, playerObject.myCard))
+    def claimSelf(self, playerObject, card, truth = False):
+        playerObject.gameObject.claimRole(card, playerObject.playerID, playerObject.playerID)
+        playerObject.addAction(Action(playerObject.playerID, ActionType.TRUTH if truth == True else ActionType.LIE, playerObject.playerID, card))
     def claimBeingSeer(self, playerObject, target, cardSaw, truth = False):
         playerObject.gameObject.claimRole(cardSaw, target, playerObject.playerID)
         playerObject.addAction(Action(playerObject.playerID, ActionType.TRUTH if truth == True else ActionType.LIE, target, cardSaw))
@@ -88,27 +97,33 @@ class PlayerAI(PlayerAgent):
             for i in range(0, playerObject.gameObject.numberOfPlayers):
                 if playerObject.gameObject.gameTable[i] is Roles.WEREWOLF:
                     self.sureCard[i] = Roles.WEREWOLF
+                    if i is not playerObject.playerID:
+                        self.personWeight[i] *= 2
+
     sayingTruthOnce = False
-    def talkingLoop(self, playerObject) :
+
+    def talkingLoop(self, playerObject, timeLeft) :
         if not self.sayingTruthOnce:
             self.sayingTruthOnce = True
             if playerObject.myFirstCard == Roles.SEER:
+                self.claimSelf(playerObject, Roles.SEER, True)
                 self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
             elif playerObject.myFirstCard == Roles.THIEF:
                 self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
             elif playerObject.myFirstCard == Roles.VILLAGER:
-                playerObject.gameObject.claimRole(playerObject.myFirstCard, playerObject.playerID, playerObject.playerID)
+                self.claimSelf(playerObject, Roles.VILLAGER, True)
             elif playerObject.myFirstCard == Roles.WEREWOLF:
                 playerObject.gameObject.claimRole(Roles.VILLAGER, playerObject.playerID, playerObject.playerID)
+        self.lookAtRecentClaim(playerObject)
     
     def thinkAboutClaims(self, playerObject):
         noteSureCard = [None] * len(self.sureCard)
         for idx, role in enumerate(self.sureCard):
             if role != -1:
                 noteSureCard[idx] = {'role': role, 'by': playerObject.playerID}
-
+        
         for claim in playerObject.gameObject.claimArray:
-
+            # print "claim", claim
             if noteSureCard[claim.claimed] != None and self.personWeight[claim.claimBy] >= self.personWeight[noteSureCard[claim.claimed]['by']]:
                 noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
             elif noteSureCard[claim.claimed] == None:
@@ -119,3 +134,104 @@ class PlayerAI(PlayerAgent):
                 roleCount[role["role"].value] += 1
         if roleCount[Roles.WEREWOLF.value] > 2 or roleCount[Roles.THIEF.value] > 1 or roleCount[Roles.SEER.value] > 1 or roleCount[Roles.VILLAGER.value] > playerObject.gameObject.numberOfPlayers - playerObject.gameObject.CENTER_NUMBER:
             print ColorTextExt(playerObject.playerID), "something is WRONG!", ColorTextExt.RESET
+    
+    lastClaimLook = -1
+    def lookAtRecentClaim(self, playerObject):
+        currentClaim = len(playerObject.gameObject.claimArray)
+        if self.lastClaimLook < currentClaim:
+            self.lastClaimLook = currentClaim
+            if playerObject.gameObject.claimArray:
+                lastClaim = playerObject.gameObject.claimArray[-1]
+                if lastClaim.claimed == playerObject.playerID and lastClaim.claimBy != playerObject.playerID:
+                    if lastClaim.role != Roles.WEREWOLF:
+                        print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
+                    else:
+                        print ColorTextExt(playerObject.playerID), "No I'm not!", ColorTextExt.RESET
+    
+    def getSuccessor(self, playerObject):
+        pass
+
+    def believingSeer(self, playerObject):
+        whoIsSeer = [0] * len(self.sureCard)
+        claiming = [-1] * len(self.sureCard)
+        hasOne = False
+        for claim in playerObject.gameObject.claimArray:
+            if claim.role == Roles.SEER:
+                hasOne = True
+                whoIsSeer[claim.claimed] = self.personWeight[claim.claimBy]
+                claiming[claim.claimBy] = claim.claimed
+        if hasOne:
+            mostSeer = claiming[whoIsSeer.index(max(whoIsSeer))]
+            self.sureCard[mostSeer] = Roles.SEER
+
+    def believingThief(self, playerObject):
+        whoIsThief = [-1] * len(self.sureCard)
+        claiming = [-1] * len(self.sureCard)
+        nextRole = [Roles.UNKNOWN] * len(self.sureCard)
+        personGet = [None] * len(self.sureCard)
+        hasOne = False
+        for idx, claim in enumerate(playerObject.gameObject.claimArray):
+            if claim.role == Roles.THIEF:
+                if idx != 0 and playerObject.gameObject.claimArray[idx-1].claimBy == claim.claimBy and playerObject.gameObject.claimArray[idx-1].claimed == playerObject.gameObject.claimArray[idx-1].claimBy:
+                    hasOne = True
+                    thiefStoleClaim = playerObject.gameObject.claimArray[idx-1]
+                    whoIsThief[thiefStoleClaim.claimed] = self.personWeight[claim.claimBy]
+                    claiming[claim.claimBy] = claim.claimed
+                    nextRole[claim.claimBy] = thiefStoleClaim.role
+        if hasOne:
+            mostWasThief = whoIsThief.index(max(whoIsThief))
+            self.sureCard[mostWasThief] = nextRole[mostWasThief]
+            self.sureCard[claiming[mostWasThief]] = Roles.THIEF
+            print ColorTextExt(playerObject.playerID), mostWasThief, "was thief and should be", nextRole[mostWasThief].name, "from",claiming[mostWasThief], "'s" ,self.sureCard[claiming[mostWasThief]].name, ColorTextExt.RESET
+
+    def getNextAction(self, playerObject):
+        if playerObject.gameObject.numberOfPlayers == 3:
+            playerObject.gameObject.claimRole(Roles.THIEF, playerObject.playerID, playerObject.playerID)
+        elif playerObject.gameObject.numberOfPlayers >= 4:
+            if playerObject.myFirstCard == Roles.THIEF:
+                #random
+                if self.sureCard[playerObject.playerID] == Roles.WEREWOLF:
+                    pass
+                else:
+                    self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
+            elif playerObject.myFirstCard == Roles.WEREWOLF:
+                #another random
+                pass
+            elif playerObject.myFirstCard == Roles.SEER:
+                self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
+                if playerObject.usedSkillOn >= playerObject.gameObject.numberOfPlayers:
+                    anotherCard = playerObject.gameObject.numberOfPlayers+1 if playerObject.usedSkillOn == playerObject.gameObject.numberOfPlayers else playerObject.gameObject.numberOfPlayers
+                    self.claimBeingSeer(playerObject, anotherCard, self.sureCard[anotherCard], True)
+            else:
+                playerObject.gameObject.claimRole(playerObject.myFirstCard, playerObject.playerID, playerObject.playerID)
+        pass
+
+    wolfHistory = -1
+    def randomForWerewolf(self, playerObject):
+        anotherWolf = self.getAnotherWolf(playerObject)
+        if anotherWolf >= 0:
+            #exist
+            self.seerAnotherWolf
+            pass
+        else:
+            #no another
+            pass
+        if self.wolfHistory <= -1:
+            self.wolfHistory = 0
+        for i in range(self.wolfHistory, len(playerObject.gameObject.claimArray)):
+            if playerObject.gameObject.claimArray[i].role == Roles.THIEF or playerObject.gameObject.claimArray[i].role == Roles.SEER:
+                pass
+
+    wolfApproach = None
+
+    def seerAnotherWolf(self, playerObject, role, another):
+        self.claimSelf(playerObject, Roles.SEER)
+        self.claimBeingSeer(playerObject, another, role)
+    
+
+    def getAnotherWolf(self, playerObject):
+        for idx, card in enumerate(self.sureCard):
+            if card is Roles.WEREWOLF and idx != playerObject.playerID:
+                return idx
+        return -1
+    

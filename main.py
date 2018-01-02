@@ -54,6 +54,8 @@ def gameover():
     for player in playerArray:
         player.playerAI.thinkAboutClaims(player)
         player.playerAI.claim(player)
+        player.playerAI.believingSeer(player)
+        player.playerAI.believingThief(player)
     for player in playerArray:
         player.playerAI.vote(player)
         game.voteFor(player.voteFor, player.playerID)
@@ -61,7 +63,7 @@ def gameover():
     game.countVote()
     game.printCurretGame()
 
-GAMETIME = 4.0
+GAMETIME = 2.0
 nPlayers = 0
 while(nPlayers > 6 or nPlayers < 3):
     var = raw_input(ColorTextExt.PROPMTEXT + "Please enter number of players (3-6): " + ColorTextExt.RESET)
@@ -103,7 +105,12 @@ def inputLoop():
                 print "Wrong vote format"
         elif input_string[:1].lower() == "t":
             try:
-                game.claimThief(int(float(input_string[2:3])), int(float(input_string[1:2])), 0)
+                game.claimThief(Roles.roleAtIndex(int(float(input_string[2:3]))), int(float(input_string[1:2])), 0)
+            except ValueError:
+                print "Wrong vote format"
+        elif input_string[:1].lower() == "p":
+            try:
+                game.claimRole(Roles.roleAtIndex(int(float(input_string[2:3]))), int(float(input_string[1:2])), 0)
             except ValueError:
                 print "Wrong vote format"
         else:
@@ -116,7 +123,7 @@ def AIRunning():
     while 1:
         timeleft = GAMETIME - (time.time() - startTime)
         for player in playerArray:
-            player.playerAI.talkingLoop(player)
+            player.playerAI.talkingLoop(player, timeleft)
     pass
 
 thread1 = threading.Thread( target=inputLoop)

@@ -3,6 +3,7 @@ import logging
 import random
 from uuid import uuid4
 from util import dotdict
+
 class ColorTextExt:
     def __init__(self, i, j = 0):
         self.fore = i
@@ -20,6 +21,7 @@ class ColorTextExt:
     "\033[30m",]      # black
     RESET = "\033[0m"      # reset
     PROPMTEXT = "\033[30m" + "\033[47m"
+
 class Blaim:
     claimBy = None
     claimed = None
@@ -30,6 +32,8 @@ class Blaim:
         self.claimed = claimed
         self.role = role
 
+    def __str__(self):
+        return " By " + str(self.claimBy) + " To " + str(self.claimed) + " role " + str(self.role)
 def enum(**enums):
     return type('Enum', (), enums)
 class Roles:
@@ -44,11 +48,11 @@ class Roles:
             3: cls.VILLAGER,
         }.get(i, cls.VILLAGER)
 
-    WEREWOLF = dotdict({"value":0, "name":"WEREWOLF"})
-    SEER = dotdict({"value":1, "name":"SEER"})
-    THIEF = dotdict({"value":2, "name":"THIEF"})
-    VILLAGER = dotdict({"value":3, "name":"VILLAGER"})
-    UNKNOWN = dotdict({"value":-1, "name":"UNKNOWN"})
+    WEREWOLF = dotdict({"value":0, "name":"WEREWOLF", "win":1})
+    SEER = dotdict({"value":1, "name":"SEER", "win":0})
+    THIEF = dotdict({"value":2, "name":"THIEF", "win":0})
+    VILLAGER = dotdict({"value":3, "name":"VILLAGER", "win":0})
+    UNKNOWN = dotdict({"value":-1, "name":"UNKNOWN", "win":0})
 class Game:
 
     # number of players: werewolf, villager
@@ -134,7 +138,52 @@ class Game:
                 lst[i] = lst[i] + 1
             else:
                 lst[random.randint(0, self.numberOfPlayers-1)]
-        print ColorTextExt.PROPMTEXT,"The most vote is", lst.index(max(lst)), " who is ", self.gameTableEdited[lst.index(max(lst))].name, ColorTextExt.RESET
+        maxOf = (max(lst))
+        countOfMax = lst.count(maxOf)
+        if countOfMax == 1 and maxOf > 1:
+            print ColorTextExt.PROPMTEXT,"The most vote is", lst.index(max(lst)), " who is ", self.gameTableEdited[lst.index(max(lst))].name, ColorTextExt.RESET
+            if self.gameTableEdited[lst.index(max(lst))] == Roles.WEREWOLF:
+                self.printHumanWin()
+            else:
+                self.printWolfWin()
+        elif countOfMax >= 2 and maxOf > 1:
+            death = [i for i, j in enumerate(lst) if j == maxOf]
+            print ColorTextExt.PROPMTEXT,"The most vote are", death
+            win = False
+            for i in death:
+                if self.leechCard(i):
+                    print i, "is", self.gameTableEdited[i].name
+                    win = True
+            if win == False:
+                print "No WEREWOLF"
+                self.printWolfWin()
+            else:
+                self.printHumanWin()
+        else:
+            print "No one die"
+            win = True
+            for i in range(self.numberOfPlayers):
+                if self.gameTableEdited[i] == Roles.WEREWOLF:
+                    win = False
+            if win == False:
+                self.printWolfWin()
+            else:
+                self.printHumanWin()
+
+    def printHumanWin(self):
+        winList = []
+        for i in range(self.numberOfPlayers):
+            if self.gameTableEdited[i].win == 0:
+                winList.append(i)
+        print winList, 'Human Won'
+
+    def printWolfWin(self):
+        winList = []
+        for i in range(self.numberOfPlayers):
+            if self.gameTableEdited[i].win == 1:
+                winList.append(i)
+        print winList, 'Werewolf Won' 
+
     def claimRole(self, role, claiming, claimedBy):
         if claiming == claimedBy:
             print ColorTextExt(claimedBy), claimedBy, ": I'm", role.name, ColorTextExt.RESET
