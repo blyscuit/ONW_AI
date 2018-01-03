@@ -192,7 +192,10 @@ class Game:
         newBlaim = Blaim(claimedBy, claiming, role)
         self.claimArray.append(newBlaim)
     def claimThief(self, role, claiming, claimedBy):
-        print ColorTextExt(claimedBy), claimedBy, ": I was a THIEF, now", role.name, " \n I switched with ", claiming," who is now a THIEF ", ColorTextExt.RESET
+        if claimedBy == claiming:
+            print ColorTextExt(claimedBy), claimedBy, ": I was a THIEF didn't exchange", ColorTextExt.RESET
+        else:
+            print ColorTextExt(claimedBy), claimedBy, ": I was a THIEF, now", role.name, " \n I switched with ", claiming," who is now a THIEF ", ColorTextExt.RESET
         newBlaim = Blaim(claimedBy, claimedBy, role)
         self.claimArray.append(newBlaim)
         newBlaim = Blaim(claimedBy, claiming, Roles.THIEF)

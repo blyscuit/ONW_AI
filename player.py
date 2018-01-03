@@ -16,6 +16,7 @@ class Player:
         self.playerID = player
         self.gameObject = game
         self.playerAI = ai
+        self.voteFor = player+1%game.numberOfPlayers
 
     def addAction(self, action):
         self.actionDid.append(action)
