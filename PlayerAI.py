@@ -7,6 +7,7 @@ class PlayerAgent:
     sureCard = []
     personWeight = []
     cardWannaBe = Roles.VILLAGER
+
     # when lying own weight decrease
     def talkingLoop(self, playerObject, timeLeft) :
         pass
@@ -97,7 +98,8 @@ class PlayerAI(PlayerAgent):
             playerObject.myFirstCard = Roles.WEREWOLF
             playerObject.usedSkillOn = randomCard
         elif playerObject.myFirstCard == Roles.WEREWOLF:
-            roleArray = [Roles.VILLAGER, Roles.VILLAGER, Roles.THIEF, Roles.SEER]
+            roleArray = self.listOfNotClaimCards(playerObject)
+            filter(lambda a: a != Roles.WEREWOLF, roleArray)
             random.shuffle(roleArray)
             self.cardWannaBe = roleArray.pop()
             for i in range(0, playerObject.gameObject.numberOfPlayers):
@@ -151,8 +153,8 @@ class PlayerAI(PlayerAgent):
                 lastClaim = playerObject.gameObject.claimArray[-1]
                 if playerObject.myFirstCard == Roles.WEREWOLF:
                     if not self.sayingTruthOnce and lastClaim.claimBy == playerObject.usedSkillOn:
-                        roleArray = [Roles.VILLAGER, Roles.VILLAGER, Roles.THIEF, Roles.SEER]
-                        roleArray.remove(lastClaim.role)
+                        roleArray = self.listOfNotClaimCards(playerObject)
+                        filter(lambda a: a != Roles.WEREWOLF, roleArray)
                         random.shuffle(roleArray)
                         self.cardWannaBe = roleArray.pop()
                         print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
@@ -171,6 +173,7 @@ class PlayerAI(PlayerAgent):
                         else:
                             self.claimSelf(playerObject, playerObject.myFirstCard, True)
                             print ColorTextExt(playerObject.playerID), "No I'm not!", ColorTextExt.RESET
+            print(self.listOfNotClaimCards(playerObject))
             self.thinkAboutClaims(playerObject)
     
     def getSuccessor(self, playerObject):
@@ -236,10 +239,14 @@ class PlayerAI(PlayerAgent):
         pass
 
     wolfHistory = -1
+    def randomForThief(self, playerObject):
+        pass
     def randomForWerewolf(self, playerObject):
         anotherWolf = self.getAnotherWolf(playerObject)
+        actionList = [self.lieSeerRandomCardWerewolf, self.lieSeerRandomCardThief, self.wolfLieSeerMiddle, self.lieVillage]
         if anotherWolf >= 0:
             #exist
+            actionList.append(self.lieSeerAnotherWolf)
             # self.seerAnotherWolf()
             #or
             pass
@@ -253,7 +260,7 @@ class PlayerAI(PlayerAgent):
                 pass
 
     wolfApproach = None
-
+    
     def lieSeerAnotherWolf(self, playerObject):
         #pass only playerObject
         #this funciton takes care of the person and role
@@ -317,3 +324,29 @@ class PlayerAI(PlayerAgent):
             if card is Roles.WEREWOLF and idx != playerObject.playerID:
                 return idx
         return -1
+
+    def listOfNotClaimCards(self, playerObject):
+        hasCard = [1] * Roles.roleCount
+        for i in range(playerObject.gameObject.numberOfPlayers - (playerObject.gameObject.CENTER_NUMBER + 1)):
+            hasCard[Roles.VILLAGER.value] += 1
+        noteSureCard = [None] * len(self.sureCard)
+        for idx, role in enumerate(self.sureCard):
+            if role != -1:
+                noteSureCard[idx] = {'role': role, 'by': playerObject.playerID}
+        
+        for claim in playerObject.gameObject.claimArray:
+            # print "claim", claim
+            if noteSureCard[claim.claimed] != None and self.personWeight[claim.claimBy] >= self.personWeight[noteSureCard[claim.claimed]['by']]:
+                noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
+            elif noteSureCard[claim.claimed] == None:
+                noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
+        roleCount = [0] * Roles.roleCount
+        for role in noteSureCard:
+            if role != None and role["role"] != Roles.UNKNOWN:
+                roleCount[role["role"].value] += 1
+        leftCard = []
+        for i in range(len(hasCard)):
+            hasCard[i] -= roleCount[i]
+            for j in range(hasCard[i]):
+                leftCard.append(Roles.roleAtIndex(i))
+        return leftCard
