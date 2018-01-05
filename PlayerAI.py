@@ -31,9 +31,9 @@ class PlayerAI(PlayerAgent):
     LastTalkTime = None
     def decideWhetherToTalk(self, currentGameTime):
         x = geometricProbability(0.3, 0.3, 0.8, 2.0, 30.0, currentGameTime, 0.6, talkTime)
-	    y = random.random()
-	    print("random number is ",y)
-	    if(y<x):
+        y = random.random()
+        print("random number is ",y)
+        if(y<x):
             self.LastTalkTime = currentGameTime
             return True
         else:
