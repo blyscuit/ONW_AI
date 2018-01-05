@@ -28,11 +28,12 @@ class PlayerAgent:
         
         
 class PlayerAI(PlayerAgent):
-    LastTalkTime = None
-    def decideWhetherToTalk(self, currentGameTime):
-        x = geometricProbability(0.3, 0.3, 0.8, 2.0, 30.0, currentGameTime, 0.6, talkTime)
+    LastTalkTime = 0
+    def decideWhetherToTalk(self, talkedNum, totalTalkTime, currentGameTime, intervalTime):
+        prob = 0.3 #TODO calculate this according to RoleLogic
+        #              probability, startVal, endVal ,talkNum,endTime, time, timeRate, lastTalkTime
+        x = geometricProbability(prob, 0.1, 0.8, talkedNum , totalTalkTime, currentGameTime, intervalTime, LastTalkTime)
         y = random.random()
-        print("random number is ",y)
         if(y<x):
             self.LastTalkTime = currentGameTime
             return True
@@ -543,9 +544,18 @@ class PlayerAI(PlayerAgent):
                 possibilities.append([Roles.BAD_THIEF if x==Roles.THIEF else x for x in possibility])
         return possibilities
 
+    """
+    probability is value that is auto gen and is generated for each robot
+    timeRate is time per iteration
+    time is the time
+    startVal is the heighest achievable probability of talking when time is at start
+    endVal is the heighest achievable probability of talking when time is at end
+    lastTalkTime is the last time that agent last talked. Start at 0
+    timeRate is the ratio between time per iteration
+    """
     def geometricProbability(probability, startVal, endVal ,talkNum, endTime, time, timeRate, lastTalkTime):
         timeConst = -1*math.log(1+startVal-endVal)/endTime
-        envelope = 1+startVal-(math.e**(-1*timeConst*time))*(0.85**talkNum)
+        envelope = (1+startVal-(math.e**(-1*timeConst*time)))*(0.85**talkNum)
         iteration = (time-lastTalkTime)/(timeRate+0.0)
         #calcProb = (1-probability)*(probability**(iteration-1))*envelope
         calcProb = (1-((1-probability)**(iteration)))*envelope
