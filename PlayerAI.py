@@ -2,6 +2,7 @@ from game import Roles, Game, ColorTextExt
 import random
 from action import Action, ActionType
 import itertools
+from util import perm_unique, permute_unique
 #just the thinking
 class PlayerAgent:
     nextTalk = 1.0
@@ -57,8 +58,8 @@ class PlayerAI(PlayerAgent):
         # self.believingSeer(playerObject)
         # self.believingThief(playerObject)
         # self.believingWolf(playerObject)
-
-        
+        self.thinkAboutClaims(playerObject)
+        # print ColorTextExt(playerObject.playerID), 'Remove', [ [y.name for y in x] for x in self.allCorrectCombination], ColorTextExt.RESET
         if self.sureCard[playerObject.playerID] != Roles.WEREWOLF:
             self.countPossibility(playerObject)
         
@@ -72,6 +73,7 @@ class PlayerAI(PlayerAgent):
             #     if role != Roles.WEREWOLF and role != Roles.UNKNOWN:
             #         playerObject.voteFor = idx
             #         return
+        self.countNoWolf(playerObject)
         # playerObject.voteFor = (playerObject.playerID + 1) % playerObject.gameObject.numberOfPlayers
     def claim(self, playerObject):
         #honest
@@ -118,7 +120,7 @@ class PlayerAI(PlayerAgent):
             self.sureCard[randomCard] = playerObject.myCard
             self.sureCard[playerObject.playerID] = newcard
             playerObject.myCard = newcard
-            playerObject.myFirstCard = Roles.WEREWOLF
+            # playerObject.myFirstCard = Roles.WEREWOLF
             playerObject.usedSkillOn = randomCard
         elif playerObject.myFirstCard == Roles.WEREWOLF:
             roleArray = self.listOfNotClaimCards(playerObject)
@@ -137,15 +139,15 @@ class PlayerAI(PlayerAgent):
     def talkingLoop(self, playerObject, timeLeft) :
         if not self.sayingTruthOnce:
             self.sayingTruthOnce = True
-            # if playerObject.myFirstCard == Roles.SEER:
-            #     self.claimSelf(playerObject, Roles.SEER, True)
-            #     self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
-            # elif playerObject.myFirstCard == Roles.THIEF:
-            #     self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
-            # elif playerObject.myFirstCard == Roles.VILLAGER:
-            #     self.claimSelf(playerObject, Roles.VILLAGER, True)
-            # elif playerObject.myFirstCard == Roles.WEREWOLF:
-            #     playerObject.gameObject.claimRole(Roles.VILLAGER, playerObject.playerID, playerObject.playerID)
+            if playerObject.myFirstCard == Roles.SEER:
+                self.claimSelf(playerObject, Roles.SEER, True)
+                self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
+            elif playerObject.myFirstCard == Roles.THIEF and playerObject.myCard != Roles.WEREWOLF:
+                self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
+            elif playerObject.myFirstCard == Roles.VILLAGER:
+                self.claimSelf(playerObject, Roles.VILLAGER, True)
+            elif playerObject.myFirstCard == Roles.WEREWOLF:
+                playerObject.gameObject.claimRole(Roles.VILLAGER, playerObject.playerID, playerObject.playerID)
         self.lookAtRecentClaim(playerObject)
     
     def thinkAboutClaims(self, playerObject):
@@ -168,38 +170,51 @@ class PlayerAI(PlayerAgent):
         #                 filter(lambda a: a != Roles.SEER, possibleRole[claim.claimBy])
         #                 filter(lambda a: a != Roles.THIEF, possibleRole[claim.claimBy])
 
+        # 'thinking'
+
         self.allCorrectCombination = self.generateAllPossibility(playerObject)
 
         newCombination = list(self.allCorrectCombination)
         for possibility in self.allCorrectCombination:
+            if playerObject.myFirstCard == Roles.THIEF:
+                if possibility[playerObject.usedSkillOn] != playerObject.myCard:
+                    newCombination.remove(possibility)
+                    continue
             if possibility[playerObject.playerID] != playerObject.myFirstCard:
                 newCombination.remove(possibility)
                 continue
             theyDidClaimSelf = [[Roles.UNKNOWN]] * playerObject.gameObject.numberOfPlayers
             assumingGoodRole = []
             theyDidClaimOther = []
+            myClaimOther = [[Roles.UNKNOWN]] * playerObject.gameObject.numberOfPlayers
             for play in range(playerObject.gameObject.numberOfPlayers):
                 theyDidClaimOther.append([[Roles.UNKNOWN]] * playerObject.gameObject.numberOfPlayers)
             for role in possibility:
-                if role == Roles.WEREWOLF:
+                if role.win == Roles.WEREWOLF.win:
                     assumingGoodRole.append(False)
                 else:
                     assumingGoodRole.append(True)
             for claim in playerObject.gameObject.claimArray:
-                if claim.claimed == claim.claimBy:
+                if playerObject.playerID == claim.claimBy:
                     if assumingGoodRole[claim.claimBy] == True:
-                        theyDidClaimSelf[claim.claimBy] = [claim.role]
+                        myClaimOther[claim.claimed] = [claim.role]
                     else:
-                        theyDidClaimSelf[claim.claimBy] = Roles.inverseRole(claim.role)
+                        myClaimOther[claim.claimed] = Roles.inverseRole(claim.role)
                 else:
-                    if assumingGoodRole[claim.claimBy] == True:
-                        theyDidClaimOther[claim.claimBy][claim.claimed] = [claim.role]
+                    if claim.claimed == claim.claimBy:
+                        if assumingGoodRole[claim.claimBy] == True:
+                            theyDidClaimSelf[claim.claimBy] = [claim.role]
+                        else:
+                            theyDidClaimSelf[claim.claimBy] = Roles.inverseRole(claim.role)
                     else:
-                        theyDidClaimOther[claim.claimBy][claim.claimed] = Roles.inverseRole(claim.role)
+                        if assumingGoodRole[claim.claimBy] == True:
+                            theyDidClaimOther[claim.claimBy][claim.claimed] = [claim.role]
+                        else:
+                            theyDidClaimOther[claim.claimBy][claim.claimed] = Roles.inverseRole(claim.role)
             
             possible = True
             for idx, role in enumerate(possibility):
-                if role not in theyDidClaimSelf[idx] and Roles.UNKNOWN not in theyDidClaimSelf[idx]:
+                if (role not in theyDidClaimSelf[idx] and Roles.UNKNOWN not in theyDidClaimSelf[idx]) or (role not in myClaimOther[idx] and Roles.UNKNOWN not in myClaimOther[idx]):
                     possible = False
                     break
                 else:
@@ -209,8 +224,9 @@ class PlayerAI(PlayerAgent):
                             possible = False
                             break
             if possible == False:
-                # print ColorTextExt(playerObject.playerID), "Remove", possibility, ColorTextExt.RESET
                 newCombination.remove(possibility)
+        # if playerObject.myFirstCard != Roles.WEREWOLF:
+        self.allCorrectCombination = newCombination
         self.countNoWolf(playerObject)
 
         # noteSureCard = [None] * len(self.sureCard)
@@ -267,7 +283,8 @@ class PlayerAI(PlayerAgent):
                     if role == Roles.WEREWOLF:
                         countWolf[idx] += 1
         maxWolf = max(countWolf)
-        if maxWolf < 3:
+        # if maxWolf <= playerObject.gameObject.numberOfPlayers-3:
+        if maxWolf <= 2:
             playerObject.voteFor = (playerObject.playerID + 1) % playerObject.gameObject.numberOfPlayers
             print ColorTextExt(playerObject.playerID), "There might be no wolf.", ColorTextExt.RESET 
     
@@ -284,31 +301,41 @@ class PlayerAI(PlayerAgent):
         if playerObject.playerID in mostWolf:
             mostWolf.remove(playerObject.playerID)
         random.shuffle(mostWolf)
-        mostWolf = mostWolf.pop()
-        playerObject.voteFor = mostWolf
+        if mostWolf:
+            mostWolf = mostWolf.pop()
+            playerObject.voteFor = mostWolf
     
     def countWolfPossibility(self, playerObject):
         countBadThief = [0] * playerObject.gameObject.numberOfPlayers
         countWolf = [0] * playerObject.gameObject.numberOfPlayers
         for possibility in self.allCorrectCombination:
             if Roles.BAD_THIEF in possibility and possibility.index(Roles.BAD_THIEF) != playerObject.playerID:
-                countWolf[possibility.index(Roles.BAD_THIEF)] += 1
+                countBadThief[possibility.index(Roles.BAD_THIEF)] += 1
             else:
                 for idx, role in enumerate(possibility):
                     if role == Roles.WEREWOLF and idx != playerObject.playerID:
                         countWolf[idx] += 1
-        if max(countBadThief) > max(countWolf) and random.random <  (float(max(countBadThief))/float((max(countBadThief) + max(countWolf)))):
+        shouldVote = range(playerObject.gameObject.numberOfPlayers)
+        if max(countBadThief) > max(countWolf) and random.random() <  (float(max(countBadThief))/float((max(countBadThief) + max(countWolf)))):
             mostWolf = [i for i, x in enumerate(countBadThief) if x == max(countBadThief)]
             random.shuffle(mostWolf)
+            shouldVote.remove(playerObject.playerID)
             mostWolf = mostWolf.pop()
             playerObject.voteFor = mostWolf
         else:
+            random.shuffle(shouldVote)
             mostWolf = [i for i, x in enumerate(countWolf) if x == max(countWolf)]
-            random.shuffle(mostWolf)
-            if playerObject.playerID in mostWolf:
-                mostWolf.remove(playerObject.playerID)
-            mostWolf = mostWolf.pop()
-            playerObject.voteFor = mostWolf
+            if len(mostWolf) >= playerObject.gameObject.numberOfPlayers - 1:
+                playerObject.voteFor = shouldVote.pop()
+                return
+            
+            # print ColorTextExt(playerObject.playerID), 'Remove', [ [y.name for y in x] for x in self.allCorrectCombination], ColorTextExt.RESET
+            # print ColorTextExt(playerObject.playerID), max(countWolf), 'Remove', mostWolf, ColorTextExt.RESET
+            for most in mostWolf:
+                shouldVote.remove(most)
+            mostNotWolf = shouldVote.pop()
+            playerObject.voteFor = mostNotWolf
+
     
     lastClaimLook = 0
     def lookAtRecentClaim(self, playerObject):
@@ -537,11 +564,20 @@ class PlayerAI(PlayerAgent):
         return leftCard
 
     def generateAllPossibility(self, playerObject):
-        allRole = playerObject.gameObject.gameTable
-        possibilities = list(itertools.combinations(allRole, playerObject.gameObject.numberOfPlayers))
+        allRole = Roles.GenerateGameRoles(playerObject.gameObject.numberOfPlayers, False)
+        allRole = [role.value for role in allRole]
+        # possibilities = (permute_unique(allRole))
+        possibilities = set(itertools.permutations(allRole, playerObject.gameObject.numberOfPlayers))
+        possibilities = list(possibilities)
         for possibility in possibilities:
-            if Roles.THIEF in possibility:
-                possibilities.append([Roles.BAD_THIEF if x==Roles.THIEF else x for x in possibility])
+            if Roles.THIEF.value in possibility and Roles.WEREWOLF.value in possibility:
+                possibilities.append([Roles.BAD_THIEF.value if x==Roles.THIEF.value else x for x in possibility])
+                
+        possibilities = [ [Roles.roleAtIndex(y) for y in x] for x in possibilities]
+        # print ""
+        # print ColorTextExt(playerObject.playerID), 'Remove', [ [y.name for y in x] for x in possibilities], ColorTextExt.RESET
+        
+        # print ""
         return possibilities
 
     """

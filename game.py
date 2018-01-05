@@ -46,18 +46,44 @@ class Roles:
             1: cls.SEER,
             2: cls.THIEF,
             3: cls.VILLAGER,
+            -2: cls.BAD_THIEF
         }.get(i, cls.VILLAGER)
 
-    WEREWOLF = dotdict({"value":0, "name":"WEREWOLF", "win":1})
-    SEER = dotdict({"value":1, "name":"SEER", "win":0})
-    THIEF = dotdict({"value":2, "name":"THIEF", "win":0})
-    VILLAGER = dotdict({"value":3, "name":"VILLAGER", "win":0})
-    UNKNOWN = dotdict({"value":-1, "name":"UNKNOWN", "win":0})
-    BAD_THIEF = dotdict({"value":2, "name":"THIEF", "win":1})
+    WEREWOLF_RAW = {"value":0, "name":"WEREWOLF", "win":1}
+    SEER_RAW = {"value":1, "name":"SEER", "win":0}
+    THIEF_RAW = {"value":2, "name":"THIEF", "win":0}
+    VILLAGER_RAW = {"value":3, "name":"VILLAGER", "win":0}
+    UNKNOWN_RAW = {"value":-1, "name":"UNKNOWN", "win":0}
+    BAD_THIEF_RAW = {"value":-2, "name":"Bad_THIEF", "win":1}
+
+    WEREWOLF = dotdict(WEREWOLF_RAW)
+    SEER = dotdict(SEER_RAW)
+    THIEF = dotdict(THIEF_RAW)
+    VILLAGER = dotdict(VILLAGER_RAW)
+    UNKNOWN = dotdict(UNKNOWN_RAW)
+    BAD_THIEF = dotdict(BAD_THIEF_RAW)
+
+    @classmethod
+    def GenerateGameRoles(cls, players, shuffle = True):
+        newGameTable = []
+        for i in range(players-2):
+            newGameTable.append(Roles.VILLAGER)
+        newGameTable.append(Roles.SEER)
+        newGameTable.append(Roles.THIEF)
+        newGameTable.append(Roles.WEREWOLF)
+        newGameTable.append(Roles.WEREWOLF)
+        if shuffle:
+            random.shuffle(newGameTable)
+        return newGameTable
+
     
     @classmethod
     def AllRoles(cls):
         return [cls.WEREWOLF, cls.SEER, cls.THIEF, cls.VILLAGER, cls.BAD_THIEF]
+    
+    @classmethod
+    def AllRolesRaw(cls):
+        return [cls.WEREWOLF_RAW, cls.SEER_RAW, cls.THIEF_RAW, cls.VILLAGER_RAW, cls.BAD_THIEF_RAW]
     
     @classmethod
     def inverseRole(cls, role):
@@ -128,15 +154,7 @@ class Game:
         self.voteArray = [0] * self.numberOfPlayers
 
     def distribute_cards(self, players):
-        newGameTable = []
-        newGameTable.append(Roles.SEER)
-        newGameTable.append(Roles.THIEF)
-        newGameTable.append(Roles.WEREWOLF)
-        newGameTable.append(Roles.WEREWOLF)
-        for i in range(players-2):
-            newGameTable.append(Roles.VILLAGER)
-        random.shuffle(newGameTable)
-        return newGameTable
+        return Roles.GenerateGameRoles(players, True)
     def lookAtCard(self,tableNumber):
         return self.gameTable[tableNumber]
     def switchCard(self,myCard,otherCard):
