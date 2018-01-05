@@ -28,6 +28,16 @@ class PlayerAgent:
         
         
 class PlayerAI(PlayerAgent):
+    LastTalkTime = None
+    def decideWhetherToTalk(self, currentGameTime):
+        x = geometricProbability(0.3, 0.3, 0.8, 2.0, 30.0, currentGameTime, 0.6, talkTime)
+	    y = random.random()
+	    print("random number is ",y)
+	    if(y<x):
+            self.LastTalkTime = currentGameTime
+            return True
+        else:
+            return False
     allCorrectCombination = []
     def lookOwnCard(self, playerObject):
         self.allCorrectCombination = self.generateAllPossibility(playerObject)
@@ -532,3 +542,12 @@ class PlayerAI(PlayerAgent):
             if Roles.THIEF in possibility:
                 possibilities.append([Roles.BAD_THIEF if x==Roles.THIEF else x for x in possibility])
         return possibilities
+
+    def geometricProbability(probability, startVal, endVal ,talkNum, endTime, time, timeRate, lastTalkTime):
+        timeConst = -1*math.log(1+startVal-endVal)/endTime
+        envelope = 1+startVal-(math.e**(-1*timeConst*time))*(0.85**talkNum)
+        iteration = (time-lastTalkTime)/(timeRate+0.0)
+        #calcProb = (1-probability)*(probability**(iteration-1))*envelope
+        calcProb = (1-((1-probability)**(iteration)))*envelope
+        print ("calcProb is: ",calcProb)
+        return calcProb
