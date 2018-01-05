@@ -14,8 +14,8 @@ class PlayerHuman(PlayerAgent):
         #0 Wolf
         if playerObject.myCard == Roles.SEER:
             numbers = -1
-            while(numbers < 0 or numbers > playerObject.gameObject.numberOfPlayers+playerObject.gameObject.CENTER_NUMBER - 1):
-                var = raw_input("You are SEER, look at number:")
+            while(numbers <= 0 or numbers > playerObject.gameObject.numberOfPlayers+playerObject.gameObject.CENTER_NUMBER - 1):
+                var = raw_input("You are SEER, look at number (1-"+ str(playerObject.gameObject.numberOfPlayers+playerObject.gameObject.CENTER_NUMBER - 1) +"): ")
                 print ColorTextExt(0), "looking at", var, ColorTextExt.RESET
                 try:
                     numbers = int(float(var))
@@ -31,7 +31,7 @@ class PlayerHuman(PlayerAgent):
         elif playerObject.myCard == Roles.THIEF:
             numbers = -1
             while(numbers < 0 or numbers > playerObject.gameObject.numberOfPlayers - 1):
-                var = raw_input("You are THIEF, switch with number:")
+                var = raw_input("You are THIEF, switch with number (0-" + str(playerObject.gameObject.numberOfPlayers-1) + "): ")
                 print ColorTextExt(0), "switching with", var, ColorTextExt.RESET
                 try:
                     numbers = int(float(var))
@@ -46,3 +46,5 @@ class PlayerHuman(PlayerAgent):
                     print ColorTextExt(0), i, "is WEREWOLF", ColorTextExt.RESET
         elif playerObject.myCard == Roles.VILLAGER:
             print ColorTextExt(0), "You are VILLAGER", ColorTextExt.RESET
+    
+        var = raw_input("Press ENTER to begin game")

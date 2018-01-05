@@ -53,6 +53,24 @@ class Roles:
     THIEF = dotdict({"value":2, "name":"THIEF", "win":0})
     VILLAGER = dotdict({"value":3, "name":"VILLAGER", "win":0})
     UNKNOWN = dotdict({"value":-1, "name":"UNKNOWN", "win":0})
+    BAD_THIEF = dotdict({"value":2, "name":"THIEF", "win":1})
+    
+    @classmethod
+    def AllRoles(cls):
+        return [cls.WEREWOLF, cls.SEER, cls.THIEF, cls.VILLAGER, cls.BAD_THIEF]
+    
+    @classmethod
+    def inverseRole(cls, role):
+        if role == cls.WEREWOLF:
+            return [cls.THIEF, cls.WEREWOLF]
+        elif role == cls.SEER:
+            return [cls.WEREWOLF, cls.BAD_THIEF]
+        elif role == cls.THIEF:
+            return [cls.WEREWOLF]
+        elif role == cls.VILLAGER:
+            return [cls.WEREWOLF, cls.BAD_THIEF]
+        else:
+            return []
 class Game:
 
     # number of players: werewolf, villager
@@ -196,9 +214,9 @@ class Game:
             print ColorTextExt(claimedBy), claimedBy, ": I was a THIEF didn't exchange", ColorTextExt.RESET
         else:
             print ColorTextExt(claimedBy), claimedBy, ": I was a THIEF, now", role.name, " \n I switched with ", claiming," who is now a THIEF ", ColorTextExt.RESET
-        newBlaim = Blaim(claimedBy, claimedBy, role)
+        newBlaim = Blaim(claimedBy, claimedBy, Roles.THIEF)
         self.claimArray.append(newBlaim)
-        newBlaim = Blaim(claimedBy, claiming, Roles.THIEF)
+        newBlaim = Blaim(claimedBy, claiming, role)
         self.claimArray.append(newBlaim)
     def printCurretGame(self):
         print ColorTextExt.PROPMTEXT,"", ColorTextExt.RESET

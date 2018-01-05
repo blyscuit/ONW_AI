@@ -54,8 +54,6 @@ def timesUp():
 def gameover():
     for player in playerArray:
         player.playerAI.claim(player)
-        player.playerAI.believingSeer(player)
-        player.playerAI.believingThief(player)
     for player in playerArray:
         player.playerAI.vote(player)
         game.voteFor(player.voteFor, player.playerID)
@@ -98,7 +96,7 @@ threading.Timer(GAMETIME, gameover).start()
 # CustomTimer(GAMETIME, timesUp).start()
 # CustomTimer(GAMETIME, gameover).start()
 def inputLoop():
-    print ColorTextExt.PROPMTEXT + "What are you? \n " + "WEREWOLF = 0,SEER = 1,THIEF = 2,VILLAGER = 3 \n " + "v[roles]: t[roles][person]" + ColorTextExt.RESET + "\n"
+    print ColorTextExt.PROPMTEXT + "What are you? \n " + "WEREWOLF = 0    SEER = 1    THIEF = 2    VILLAGER = 3 \n " + "VOTE = v[role]    STEAL = t[person][role]    OTHER = p[person][role]" + ColorTextExt.RESET + "\n"
     while 1:
         input_string = raw_input()
         if input_string[:1].lower() == "v":
