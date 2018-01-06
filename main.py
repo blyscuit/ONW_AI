@@ -11,6 +11,7 @@ from timeit import Timer
 from multiprocessing import Process
 from Tkinter import *
 import sys
+import random
 
 class MyDialog:
     def __init__(self, parent):

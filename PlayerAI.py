@@ -1,4 +1,5 @@
 from game import Roles, Game, ColorTextExt
+import math
 import random
 from action import Action, ActionType
 import itertools
@@ -33,7 +34,7 @@ class PlayerAI(PlayerAgent):
     def decideWhetherToTalk(self, talkedNum, totalTalkTime, currentGameTime, intervalTime):
         prob = 0.3 #TODO calculate this according to RoleLogic
         #              probability, startVal, endVal ,talkNum,endTime, time, timeRate, lastTalkTime
-        x = geometricProbability(prob, 0.1, 0.8, talkedNum , totalTalkTime, currentGameTime, intervalTime, LastTalkTime)
+        x = self.geometricProbability(prob, 0.1, 0.8, talkedNum , totalTalkTime, currentGameTime, intervalTime, self.LastTalkTime)
         y = random.random()
         if(y<x):
             self.LastTalkTime = currentGameTime
@@ -594,11 +595,10 @@ class PlayerAI(PlayerAgent):
     lastTalkTime is the last time that agent last talked. Start at 0
     timeRate is the ratio between time per iteration
     """
-    def geometricProbability(probability, startVal, endVal ,talkNum, endTime, time, timeRate, lastTalkTime):
+    def geometricProbability(self, probability, startVal, endVal ,talkNum, endTime, time, timeRate, lastTalkTime):
         timeConst = -1*math.log(1+startVal-endVal)/endTime
         envelope = (1+startVal-(math.e**(-1*timeConst*time)))*(0.85**talkNum)
         iteration = (time-lastTalkTime)/(timeRate+0.0)
         #calcProb = (1-probability)*(probability**(iteration-1))*envelope
         calcProb = (1-((1-probability)**(iteration)))*envelope
-        print ("calcProb is: ",calcProb)
         return calcProb
