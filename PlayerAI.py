@@ -601,4 +601,5 @@ class PlayerAI(PlayerAgent):
         iteration = (time-lastTalkTime)/(timeRate+0.0)
         #calcProb = (1-probability)*(probability**(iteration-1))*envelope
         calcProb = (1-((1-probability)**(iteration)))*envelope
+        #print ("calcProb is: ",calcProb)
         return calcProb
