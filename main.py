@@ -11,6 +11,7 @@ from timeit import Timer
 from multiprocessing import Process
 from Tkinter import *
 import sys
+import random
 
 class MyDialog:
     def __init__(self, parent):
@@ -61,6 +62,7 @@ def gameover():
     game.printCurretGame()
 
 GAMETIME = 60.0
+TALKINTERVAL = random.uniform(1,2)
 if len(sys.argv) >= 2:
     try:
         GAMETIME = float(sys.argv[1])
@@ -109,26 +111,38 @@ def inputLoop():
         elif input_string[:1].lower() == "t":
             try:
                 game.claimThief(Roles.roleAtIndex(int(float(input_string[2:3]))), int(float(input_string[1:2])), 0)
+                AIlookAtPlayerClaim()
             except ValueError:
                 print "Wrong theif format"
         elif input_string[:1].lower() == "p":
             try:
                 if int(float(input_string[1:2])) <= len(game.gameTable):
                     game.claimRole(Roles.roleAtIndex(int(float(input_string[2:3]))), int(float(input_string[1:2])), 0)
+                    AIlookAtPlayerClaim()
                 else: "Not an index of card"
             except ValueError:
                 print "Wrong blaim format"
         else:
             try:
                 game.claimRole(Roles.roleAtIndex(int(float(input_string))), 0, 0 )
+                AIlookAtPlayerClaim()
                 # print "You claimed to be: ", input_string
             except ValueError:
                 print "Wrong format"
+def AIlookAtPlayerClaim():
+    for player in playerArray:
+        player.playerAI.lookAtRecentClaim(player)
 def AIRunning():
     while 1:
-        timeleft = GAMETIME - (time.time() - startTime)
+        #timeleft = GAMETIME - (time.time() - startTime)
+        # talkedNum = 0
         for player in playerArray:
-            player.playerAI.talkingLoop(player, timeleft)
+            currentGameTime = time.time() - startTime
+            didTalk = player.playerAI.talkingLoop(player, len(game.claimArray), GAMETIME, currentGameTime, TALKINTERVAL)
+            if(didTalk):
+                # talkedNum += 1
+                break
+        time.sleep(TALKINTERVAL)
     pass
 
 thread1 = threading.Thread( target=inputLoop)

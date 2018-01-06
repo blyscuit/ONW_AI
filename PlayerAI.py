@@ -1,4 +1,5 @@
 from game import Roles, Game, ColorTextExt
+import math
 import random
 from action import Action, ActionType
 import itertools
@@ -31,9 +32,9 @@ class PlayerAgent:
 class PlayerAI(PlayerAgent):
     LastTalkTime = 0
     def decideWhetherToTalk(self, talkedNum, totalTalkTime, currentGameTime, intervalTime):
-        prob = 0.3 #TODO calculate this according to RoleLogic
+        prob = 0.05 #TODO calculate this according to RoleLogic
         #              probability, startVal, endVal ,talkNum,endTime, time, timeRate, lastTalkTime
-        x = geometricProbability(prob, 0.1, 0.8, talkedNum , totalTalkTime, currentGameTime, intervalTime, LastTalkTime)
+        x = self.geometricProbability(prob, 0.15, 0.5, talkedNum , totalTalkTime, currentGameTime, intervalTime, self.LastTalkTime)
         y = random.random()
         if(y<x):
             self.LastTalkTime = currentGameTime
@@ -173,22 +174,14 @@ class PlayerAI(PlayerAgent):
                 self.wolfPop = self.wolfApproach(playerObject, sequence, self.wolfPop)
         return sequence+1
                 
-
-
-    def talkingLoop(self, playerObject, timeLeft) :
-        if not self.talkingSequence > 2:
-            # self.sayingTruthOnce = True
-            # if playerObject.myFirstCard == Roles.SEER:
-            #     self.claimSelf(playerObject, Roles.SEER, True)
-            #     self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
-            # elif playerObject.myFirstCard == Roles.THIEF and playerObject.myCard != Roles.WEREWOLF:
-            #     self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
-            # elif playerObject.myFirstCard == Roles.VILLAGER:
-            #     self.claimSelf(playerObject, Roles.VILLAGER, True)
-            # elif playerObject.myFirstCard == Roles.WEREWOLF:
-            #     playerObject.gameObject.claimRole(Roles.VILLAGER, playerObject.playerID, playerObject.playerID)
-            self.talkingSequence = self.talkWithSequence(playerObject, self.talkingSequence)
+    def talkingLoop(self, playerObject, talkedNum, totalTalkTime, currentGameTime, intervalTime) :
+        didTalk = False
+        willTalk = self.decideWhetherToTalk(talkedNum, totalTalkTime, currentGameTime, intervalTime)
         self.lookAtRecentClaim(playerObject)
+        if willTalk :
+            self.talkingSequence = self.talkWithSequence(playerObject, self.talkingSequence)
+            didTalk = True
+        return didTalk
     
     def thinkAboutClaims(self, playerObject):
         # possibleRole = []
@@ -400,7 +393,7 @@ class PlayerAI(PlayerAgent):
             if playerObject.gameObject.claimArray:
                 lastClaim = playerObject.gameObject.claimArray[-1]
                 if playerObject.myFirstCard == Roles.WEREWOLF:
-                    if not self.sayingTruthOnce and lastClaim.claimBy == playerObject.usedSkillOn:
+                    if not self.talkingSequence<=0 and lastClaim.claimBy == playerObject.usedSkillOn:
                         roleArray = self.listOfNotClaimCards(playerObject)
                         filter(lambda a: a != Roles.WEREWOLF, roleArray)
                         random.shuffle(roleArray)
@@ -409,17 +402,17 @@ class PlayerAI(PlayerAgent):
                     if playerObject.myFirstCard == Roles.WEREWOLF:
                         if lastClaim.role == self.cardWannaBe:
                             self.claimSelf(playerObject, lastClaim.role)
-                            print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
+                            # print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
                         else:
-                            self.claimSelf(playerObject, self.cardWannaBe)
                             print ColorTextExt(playerObject.playerID), "No I'm not!", ColorTextExt.RESET
+                            self.claimSelf(playerObject, self.cardWannaBe)
                     else:
                         if lastClaim.role == playerObject.myFirstCard:
                             self.claimSelf(playerObject, lastClaim.role, True)
-                            print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
+                            # print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
                         else:
-                            self.claimSelf(playerObject, playerObject.myFirstCard, True)
                             print ColorTextExt(playerObject.playerID), "No I'm not!", ColorTextExt.RESET
+                            self.claimSelf(playerObject, playerObject.myFirstCard, True)
             self.thinkAboutClaims(playerObject)
     
     def getSuccessor(self, playerObject):
@@ -719,11 +712,11 @@ class PlayerAI(PlayerAgent):
     lastTalkTime is the last time that agent last talked. Start at 0
     timeRate is the ratio between time per iteration
     """
-    def geometricProbability(probability, startVal, endVal ,talkNum, endTime, time, timeRate, lastTalkTime):
+    def geometricProbability(self, probability, startVal, endVal ,talkNum, endTime, time, timeRate, lastTalkTime):
         timeConst = -1*math.log(1+startVal-endVal)/endTime
         envelope = (1+startVal-(math.e**(-1*timeConst*time)))*(0.85**talkNum)
         iteration = (time-lastTalkTime)/(timeRate+0.0)
         #calcProb = (1-probability)*(probability**(iteration-1))*envelope
         calcProb = (1-((1-probability)**(iteration)))*envelope
-        print ("calcProb is: ",calcProb)
+        #print ("calcProb is: ",calcProb)
         return calcProb
