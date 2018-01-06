@@ -5,6 +5,8 @@ from uuid import uuid4
 from util import dotdict
 
 class ColorTextExt:
+    #Does not work in Windows 10
+    #Go buy a Mac
     def __init__(self, i, j = 0):
         self.fore = i
         self.back = j

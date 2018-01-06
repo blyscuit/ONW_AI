@@ -46,7 +46,6 @@ class CustomTimer(_Timer):
         return self.result
 
 gamePlaying = 0
-startTime = time.time()
 def timesUp():
     # thread1.exit()
     # thread2.exit()
@@ -91,6 +90,7 @@ for idx, card in enumerate(game.gameTable):
         # new1Player.playerAI.vote(newPlayer)
         # game.voteFor(newPlayer.voteFor, newPlayer.playerID)
 
+startTime = time.time()
 gamePlaying = threading.Timer(GAMETIME, timesUp).start()
 threading.Timer(GAMETIME, gameover).start()
 # CustomTimer(GAMETIME, timesUp).start()
