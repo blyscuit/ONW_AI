@@ -136,19 +136,24 @@ class PlayerAI(PlayerAgent):
 
     sayingTruthOnce = False
 
-    def talkingLoop(self, playerObject, timeLeft) :
-        if not self.sayingTruthOnce:
-            self.sayingTruthOnce = True
-            if playerObject.myFirstCard == Roles.SEER:
-                self.claimSelf(playerObject, Roles.SEER, True)
-                self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
-            elif playerObject.myFirstCard == Roles.THIEF and playerObject.myCard != Roles.WEREWOLF:
-                self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
-            elif playerObject.myFirstCard == Roles.VILLAGER:
-                self.claimSelf(playerObject, Roles.VILLAGER, True)
-            elif playerObject.myFirstCard == Roles.WEREWOLF:
-                playerObject.gameObject.claimRole(Roles.VILLAGER, playerObject.playerID, playerObject.playerID)
+    def talkingLoop(self, playerObject, talkedNum, totalTalkTime, currentGameTime, intervalTime) :
+        didTalk = False
+        willTalk = self.decideWhetherToTalk(talkedNum, totalTalkTime, currentGameTime, intervalTime)
         self.lookAtRecentClaim(playerObject)
+        if not self.sayingTruthOnce:
+            if willTalk :
+                self.sayingTruthOnce = True
+                if playerObject.myFirstCard == Roles.SEER:
+                    self.claimSelf(playerObject, Roles.SEER, True)
+                    self.claimBeingSeer(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.usedSkillOn], True)
+                elif playerObject.myFirstCard == Roles.THIEF and playerObject.myCard != Roles.WEREWOLF:
+                    self.claimBeingThief(playerObject, playerObject.usedSkillOn, self.sureCard[playerObject.playerID], self.sureCard[playerObject.usedSkillOn], True)
+                elif playerObject.myFirstCard == Roles.VILLAGER:
+                    self.claimSelf(playerObject, Roles.VILLAGER, True)
+                elif playerObject.myFirstCard == Roles.WEREWOLF:
+                    playerObject.gameObject.claimRole(Roles.VILLAGER, playerObject.playerID, playerObject.playerID)
+                didTalk = True
+        return didTalk
     
     def thinkAboutClaims(self, playerObject):
         # possibleRole = []
