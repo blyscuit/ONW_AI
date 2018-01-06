@@ -52,8 +52,8 @@ def timesUp():
     # thread2.exit()
     return False
 def gameover():
-    for player in playerArray:
-        player.playerAI.claim(player)
+    # for player in playerArray:
+    #     player.playerAI.claim(player)
     for player in playerArray:
         player.playerAI.vote(player)
         game.voteFor(player.voteFor, player.playerID)
@@ -80,7 +80,7 @@ playerArray = []
 for idx, card in enumerate(game.gameTable):
     if (idx < game.numberOfPlayers):
         newPlayer = None
-        if idx == 0:
+        if idx == 99:
             newPlayer = Player(card, idx, game, PlayerHuman())
         else:
             newPlayer = Player(card, idx, game, PlayerAI())
