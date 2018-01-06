@@ -210,7 +210,8 @@ class PlayerAI(PlayerAgent):
                         if assumingGoodRole[claim.claimBy] == True:
                             theyDidClaimOther[claim.claimBy][claim.claimed] = [claim.role]
                         else:
-                            theyDidClaimOther[claim.claimBy][claim.claimed] = Roles.inverseRole(claim.role)
+                            # theyDidClaimOther[claim.claimBy][claim.claimed] = Roles.inverseRole(claim.role)
+                            theyDidClaimOther[claim.claimBy][claim.claimed] = [Roles.UNKNOWN]
             
             possible = True
             for idx, role in enumerate(possibility):
@@ -329,8 +330,7 @@ class PlayerAI(PlayerAgent):
                 playerObject.voteFor = shouldVote.pop()
                 return
             
-            # print ColorTextExt(playerObject.playerID), 'Remove', [ [y.name for y in x] for x in self.allCorrectCombination], ColorTextExt.RESET
-            # print ColorTextExt(playerObject.playerID), max(countWolf), 'Remove', mostWolf, ColorTextExt.RESET
+            # print ColorTextExt(playerObject.playerIDw), max(countWolf), 'Remove', mostWolf, ColorTextExt.RESET
             for most in mostWolf:
                 shouldVote.remove(most)
             mostNotWolf = shouldVote.pop()
