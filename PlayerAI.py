@@ -13,7 +13,7 @@ class PlayerAgent:
     cardWannaBe = Roles.VILLAGER
     wasThiefBy = None
     # when lying own weight decrease
-    def talkingLoop(self, playerObject, timeLeft) :
+    def talkingLoop(self, playerObject, talkedNum, totalTalkTime, currentGameTime, intervalTime) :
         pass
     
     def vote(self, playerObject):

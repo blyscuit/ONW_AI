@@ -1,7 +1,7 @@
 from game import Game, ColorTextExt, Roles
 from player import Player
 from PlayerAI import PlayerAI
-from PlayerHuman import PlayerHuman
+from PlayerHuman import PlayerHuman, PlayerVoteHuman
 import threading
 from threading import _Timer
 from threading import Thread
@@ -51,9 +51,12 @@ def timesUp():
     # thread1.exit()
     # thread2.exit()
     return False
+AIShouldRun = True
 def gameover():
     # for player in playerArray:
     #     player.playerAI.claim(player)
+    global AIShouldRun
+    AIShouldRun = False
     for player in playerArray:
         player.playerAI.vote(player)
         game.voteFor(player.voteFor, player.playerID)
@@ -62,13 +65,20 @@ def gameover():
     game.printCurretGame()
 
 GAMETIME = 60.0
-TALKINTERVAL = random.uniform(1,2)
+talkMode = True
 if len(sys.argv) >= 2:
     try:
         GAMETIME = float(sys.argv[1])
     except:
         pass
+    try:
+        if sys.argv[2] == "vote":
+            print "Entering Vote only mode"
+            talkMode = False
+    except:
+        pass
 nPlayers = 0
+TALKINTERVAL = random.uniform(GAMETIME/60.0,GAMETIME/30.0)
 while(nPlayers > 6 or nPlayers < 3):
     var = raw_input(ColorTextExt.PROPMTEXT + "Please enter number of players (3-6): " + ColorTextExt.RESET)
     try:
@@ -81,8 +91,11 @@ playerArray = []
 for idx, card in enumerate(game.gameTable):
     if (idx < game.numberOfPlayers):
         newPlayer = None
-        if idx == 99:
-            newPlayer = Player(card, idx, game, PlayerHuman())
+        if idx == 0:
+            if talkMode:
+                newPlayer = Player(card, idx, game, PlayerHuman())
+            else:
+                newPlayer = Player(card, idx, game, PlayerVoteHuman())
         else:
             newPlayer = Player(card, idx, game, PlayerAI())
         playerArray.append(newPlayer)
@@ -133,7 +146,8 @@ def AIlookAtPlayerClaim():
     for player in playerArray:
         player.playerAI.lookAtRecentClaim(player)
 def AIRunning():
-    while 1:
+    global AIShouldRun
+    while AIShouldRun:
         #timeleft = GAMETIME - (time.time() - startTime)
         # talkedNum = 0
         for player in playerArray:
@@ -151,5 +165,6 @@ thread2 = threading.Thread( target=AIRunning)
 thread1.daemon = True
 thread2.daemon = True
 
-thread1.start()
+if talkMode:
+    thread1.start()
 thread2.start()
