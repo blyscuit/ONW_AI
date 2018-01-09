@@ -27,14 +27,15 @@ class PlayerAgent:
         pass
     def believingThief(self, playerObject):
         pass
-        
+    def lookAtRecentClaim(self, playerObject):
+        pass
         
 class PlayerAI(PlayerAgent):
     LastTalkTime = 0
     def decideWhetherToTalk(self, talkedNum, totalTalkTime, currentGameTime, intervalTime):
-        prob = 0.05 #TODO calculate this according to RoleLogic
+        prob = 0.1 #TODO calculate this according to RoleLogic
         #              probability, startVal, endVal ,talkNum,endTime, time, timeRate, lastTalkTime
-        x = self.geometricProbability(prob, 0.15, 0.5, talkedNum , totalTalkTime, currentGameTime, intervalTime, self.LastTalkTime)
+        x = self.geometricProbability(prob, 0.15, 0.8, talkedNum , totalTalkTime, currentGameTime, intervalTime, self.LastTalkTime)
         y = random.random()
         if(y<x):
             self.LastTalkTime = currentGameTime
@@ -167,14 +168,17 @@ class PlayerAI(PlayerAgent):
             else:
                 self.talkWithSequence(playerObject, random.randint(0,maxSequence))
         elif playerObject.myFirstCard == Roles.WEREWOLF or (playerObject.myFirstCard == Roles.THIEF and playerObject.myCard == Roles.WEREWOLF):
-            if sequence == 0:
+            if sequence == 0 and not self.wolfWasSeer:
                 self.wolfApproach = self.randomForWerewolf(playerObject)
+                self.wolfPop = self.wolfApproach(playerObject, sequence, self.wolfPop)
+            elif sequence == 0 and self.wolfWasSeer:
+                self.wolfApproach = self.randomForWerewolfForRole(playerObject, self.cardWannaBe)
                 self.wolfPop = self.wolfApproach(playerObject, sequence, self.wolfPop)
             else:
                 self.wolfPop = self.wolfApproach(playerObject, sequence, self.wolfPop)
         return sequence+1
                 
-    def talkingLoop(self, playerObject, talkedNum, totalTalkTime, currentGameTime, intervalTime) :
+    def talkingLoop(self, playerObject, talkedNum, totalTalkTime, currentGameTime, intervalTime):
         didTalk = False
         willTalk = self.decideWhetherToTalk(talkedNum, totalTalkTime, currentGameTime, intervalTime)
         self.lookAtRecentClaim(playerObject)
@@ -335,7 +339,7 @@ class PlayerAI(PlayerAgent):
         if maxWolf <= 2:
             if playerObject.myFirstCard != Roles.WEREWOLF:
                 playerObject.voteFor = (playerObject.playerID + 1) % playerObject.gameObject.numberOfPlayers
-            print ColorTextExt(playerObject.playerID), "There might be no wolf.", ColorTextExt.RESET 
+            # print ColorTextExt(playerObject.playerID), "There might be no wolf.", ColorTextExt.RESET 
     
     def countPossibility(self, playerObject):
         countWolf = [0] * playerObject.gameObject.numberOfPlayers
@@ -384,7 +388,7 @@ class PlayerAI(PlayerAgent):
             mostNotWolf = shouldVote.pop()
             playerObject.voteFor = mostNotWolf
 
-    
+    wolfWasSeer = False
     lastClaimLook = 0
     def lookAtRecentClaim(self, playerObject):
         currentClaim = len(playerObject.gameObject.claimArray)
@@ -400,6 +404,7 @@ class PlayerAI(PlayerAgent):
                         self.cardWannaBe = roleArray.pop()
                 if lastClaim.claimed == playerObject.playerID and lastClaim.claimBy != playerObject.playerID:
                     if playerObject.myFirstCard == Roles.WEREWOLF:
+                        self.wolfWasSeer = True
                         if lastClaim.role == self.cardWannaBe:
                             self.claimSelf(playerObject, lastClaim.role)
                             # print ColorTextExt(playerObject.playerID), "Sure!", ColorTextExt.RESET
@@ -500,8 +505,33 @@ class PlayerAI(PlayerAgent):
 
     def randomForWerewolf(self, playerObject):
         anotherWolf = self.getAnotherWolf(playerObject)
-        actionList = [self.lieSeerRandomCardWerewolf, self.lieSeerRandomCardThief, self.wolfLieSeerMiddle, self.lieVillage, self.lieThiefSelf]
+        actionList = [self.lieSeerRandomCardWerewolf, self.lieSeerRandomCardThief, self.lieVillage, self.lieThiefSelf]
         if anotherWolf >= 0:
+            #exist
+            actionList.append(self.lieSeerAnotherWolf)
+            # self.seerAnotherWolf()
+            #or
+            pass
+        else:
+            #no another
+            pass
+        if playerObject.myFirstCard == Roles.THIEF:
+            actionList.append(self.wolfLieSeerMiddle)
+        if playerObject.myFirstCard == Roles.THIEF:
+            actionList.append(self.thiefLieSeerMiddle)
+        random.shuffle(actionList)
+        return actionList.pop()
+
+    def randomForWerewolfForRole(self, playerObject, role):
+        anotherWolf = self.getAnotherWolf(playerObject)
+        actionList = []
+        if role == Roles.VILLAGER:
+            actionList = [self.lieVillage]
+        elif role == Roles.THIEF:
+            actionList = [self.lieThiefSelf]
+        elif role == Roles.SEER:
+            actionList = [self.lieSeerRandomCardWerewolf, self.lieSeerRandomCardThief]
+        if anotherWolf >= 0 and role == Roles.SEER:
             #exist
             actionList.append(self.lieSeerAnotherWolf)
             # self.seerAnotherWolf()
@@ -670,10 +700,14 @@ class PlayerAI(PlayerAgent):
         
         for claim in playerObject.gameObject.claimArray:
             # print "claim", claim
-            if noteSureCard[claim.claimed] != None and self.personWeight[claim.claimBy] >= self.personWeight[noteSureCard[claim.claimed]['by']]:
-                noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
-            elif noteSureCard[claim.claimed] == None:
-                noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
+            try:
+                if noteSureCard[claim.claimed] != None and self.personWeight[claim.claimBy] >= self.personWeight[noteSureCard[claim.claimed]['by']]:
+                    noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
+                elif noteSureCard[claim.claimed] == None:
+                    noteSureCard[claim.claimed] = {'role': claim.role, 'by': claim.claimBy}
+            except:
+                pass
+
         roleCount = [0] * Roles.roleCount
         for role in noteSureCard:
             if role != None and role["role"] != Roles.UNKNOWN:
