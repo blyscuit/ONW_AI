@@ -1,7 +1,5 @@
-<snippet>
-  <content><![CDATA[
-# ${1:One Nigth Werewolf AI}
-TODO: Write a project description
+# One Nigth Werewolf AI
+One of the first AI for One Night Werewolf with decision tree. Run on Python.
 ## Installation
 Install any requiments with
 `pip install`
@@ -14,6 +12,4 @@ python main.py -time -vote
 -vote: "vote" for vote only mode\
 ## Credits
 ## License
-]]></content>
-  <tabTrigger>readme</tabTrigger>
-</snippet>
+
